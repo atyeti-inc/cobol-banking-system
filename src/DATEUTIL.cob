@@ -2,8 +2,12 @@ IDENTIFICATION DIVISION.
 PROGRAM-ID. DATEUTIL.
 *> ================================================================
 *> DATEUTIL - Date Utility Functions
-*> BDAY = Add business days, WKDY = Weekday check,
-*> DIFF = Day difference, LEAP = Leap year check
+*> BDAY = Add business days (perpetual Federal Reserve holiday calendar)
+*> WKDY = Weekday check (Monday-Friday)
+*> DIFF = Day difference (Julian Day Number)
+*> LEAP = Leap year check
+*> ISBD = Business day check (weekday and not federal bank holiday)
+*> HOLI = Federal bank holiday check
 *> ================================================================
 
 DATA DIVISION.
@@ -24,6 +28,9 @@ WORKING-STORAGE SECTION.
 01  WS-DOW                        PIC 9(1).
     88 WS-DOW-SATURDAY            VALUE 0.
     88 WS-DOW-SUNDAY              VALUE 1.
+    88 WS-DOW-MONDAY              VALUE 2.
+    88 WS-DOW-THURSDAY            VALUE 5.
+    88 WS-DOW-FRIDAY              VALUE 6.
 
 *> Julian Day Number computation
 01  WS-JDN1                       PIC 9(10).
@@ -41,49 +48,7 @@ WORKING-STORAGE SECTION.
 01  WS-DAYS-IN-MONTH              PIC 9(2).
 01  WS-IS-LEAP                    PIC 9(1).
 
-*> Federal bank holiday table (2025-2027, Regulation CC)
-01  WS-HOLIDAY-TABLE.
-    05  WS-HOLIDAY-COUNT          PIC 9(3) VALUE 033.
-    05  WS-HOLIDAYS.
-        *> 2025 Federal Bank Holidays
-        10  FILLER PIC 9(8) VALUE 20250101. *> New Year's Day
-        10  FILLER PIC 9(8) VALUE 20250120. *> MLK Day
-        10  FILLER PIC 9(8) VALUE 20250217. *> Presidents Day
-        10  FILLER PIC 9(8) VALUE 20250526. *> Memorial Day
-        10  FILLER PIC 9(8) VALUE 20250619. *> Juneteenth
-        10  FILLER PIC 9(8) VALUE 20250704. *> Independence Day
-        10  FILLER PIC 9(8) VALUE 20250901. *> Labor Day
-        10  FILLER PIC 9(8) VALUE 20251013. *> Columbus Day
-        10  FILLER PIC 9(8) VALUE 20251111. *> Veterans Day
-        10  FILLER PIC 9(8) VALUE 20251127. *> Thanksgiving
-        10  FILLER PIC 9(8) VALUE 20251225. *> Christmas
-        *> 2026 Federal Bank Holidays
-        10  FILLER PIC 9(8) VALUE 20260101. *> New Year's Day
-        10  FILLER PIC 9(8) VALUE 20260119. *> MLK Day
-        10  FILLER PIC 9(8) VALUE 20260216. *> Presidents Day
-        10  FILLER PIC 9(8) VALUE 20260525. *> Memorial Day
-        10  FILLER PIC 9(8) VALUE 20260619. *> Juneteenth
-        10  FILLER PIC 9(8) VALUE 20260703. *> Independence Day (obs)
-        10  FILLER PIC 9(8) VALUE 20260907. *> Labor Day
-        10  FILLER PIC 9(8) VALUE 20261012. *> Columbus Day
-        10  FILLER PIC 9(8) VALUE 20261111. *> Veterans Day
-        10  FILLER PIC 9(8) VALUE 20261126. *> Thanksgiving
-        10  FILLER PIC 9(8) VALUE 20261225. *> Christmas
-        *> 2027 Federal Bank Holidays
-        10  FILLER PIC 9(8) VALUE 20270101. *> New Year's Day
-        10  FILLER PIC 9(8) VALUE 20270118. *> MLK Day
-        10  FILLER PIC 9(8) VALUE 20270215. *> Presidents Day
-        10  FILLER PIC 9(8) VALUE 20270531. *> Memorial Day
-        10  FILLER PIC 9(8) VALUE 20270618. *> Juneteenth (obs Fri)
-        10  FILLER PIC 9(8) VALUE 20270705. *> Independence Day (obs Mon)
-        10  FILLER PIC 9(8) VALUE 20270906. *> Labor Day
-        10  FILLER PIC 9(8) VALUE 20271011. *> Columbus Day
-        10  FILLER PIC 9(8) VALUE 20271111. *> Veterans Day
-        10  FILLER PIC 9(8) VALUE 20271125. *> Thanksgiving
-        10  FILLER PIC 9(8) VALUE 20271224. *> Christmas (obs Fri)
-    05  WS-HOLIDAY-ENTRY REDEFINES WS-HOLIDAYS.
-        10  WS-HOLIDAY-DATE       PIC 9(8) OCCURS 33 TIMES.
-01  WS-HOLIDAY-IDX                PIC 9(3).
+*> Holiday detection
 01  WS-IS-HOLIDAY                 PIC 9(1).
 
 *> DIFF result (signed)
@@ -117,6 +82,10 @@ MAIN-LOGIC.
             PERFORM DO-DIFF
         WHEN "LEAP"
             PERFORM DO-LEAP
+        WHEN "ISBD"
+            PERFORM DO-ISBD
+        WHEN "HOLI"
+            PERFORM DO-HOLI
         WHEN OTHER
             MOVE "E0001" TO LS-DATE-RESULT-CODE
             MOVE "Invalid function code" TO LS-DATE-RESULT-MSG
@@ -188,22 +157,119 @@ GET-DOW-FOR-BDAY.
         GIVING WS-MONTH REMAINDER WS-DAY
     PERFORM CALC-DOW.
 
-*> ----------------------------------------------------------------
-*> Check if WS-BDAY-CURRENT-DATE is a federal bank holiday
+*> ================================================================
+*> CHECK-HOLIDAY - Algorithmic Rule Engine for Federal Bank Holidays
+*> Covers all 11 Federal Reserve Bank Holidays perpetually (5 U.S.C. 6103)
+*> Includes standard weekend observation shifts (Sat->Fri, Sun->Mon)
+*> Input:  WS-BDAY-CUR-YEAR, WS-BDAY-CUR-MONTH, WS-BDAY-CUR-DAY, WS-DOW
 *> Output: WS-IS-HOLIDAY (1=yes, 0=no)
-*> ----------------------------------------------------------------
+*> ================================================================
 CHECK-HOLIDAY.
     MOVE 0 TO WS-IS-HOLIDAY
-    PERFORM VARYING WS-HOLIDAY-IDX FROM 1 BY 1
-        UNTIL WS-HOLIDAY-IDX > WS-HOLIDAY-COUNT
-        IF WS-BDAY-CURRENT-DATE =
-            WS-HOLIDAY-DATE(WS-HOLIDAY-IDX)
-            MOVE 1 TO WS-IS-HOLIDAY
-        END-IF
-    END-PERFORM.
+
+    *> 1. New Year's Day (Jan 1) & Observations
+    IF WS-BDAY-CUR-MONTH = 1 AND WS-BDAY-CUR-DAY = 1
+        MOVE 1 TO WS-IS-HOLIDAY
+    END-IF
+    *> Jan 1 on Sunday -> Observed Monday Jan 2
+    IF WS-BDAY-CUR-MONTH = 1 AND WS-BDAY-CUR-DAY = 2 AND WS-DOW-MONDAY
+        MOVE 1 TO WS-IS-HOLIDAY
+    END-IF
+    *> Jan 1 on Saturday -> Observed Friday Dec 31
+    IF WS-BDAY-CUR-MONTH = 12 AND WS-BDAY-CUR-DAY = 31 AND WS-DOW-FRIDAY
+        MOVE 1 TO WS-IS-HOLIDAY
+    END-IF
+
+    *> 2. Martin Luther King Jr. Day (3rd Monday in January: 15-21)
+    IF WS-BDAY-CUR-MONTH = 1 AND WS-DOW-MONDAY
+        AND WS-BDAY-CUR-DAY >= 15 AND WS-BDAY-CUR-DAY <= 21
+        MOVE 1 TO WS-IS-HOLIDAY
+    END-IF
+
+    *> 3. Presidents' Day / Washington's Birthday (3rd Monday in Feb: 15-21)
+    IF WS-BDAY-CUR-MONTH = 2 AND WS-DOW-MONDAY
+        AND WS-BDAY-CUR-DAY >= 15 AND WS-BDAY-CUR-DAY <= 21
+        MOVE 1 TO WS-IS-HOLIDAY
+    END-IF
+
+    *> 4. Memorial Day (Last Monday in May: 25-31)
+    IF WS-BDAY-CUR-MONTH = 5 AND WS-DOW-MONDAY
+        AND WS-BDAY-CUR-DAY >= 25 AND WS-BDAY-CUR-DAY <= 31
+        MOVE 1 TO WS-IS-HOLIDAY
+    END-IF
+
+    *> 5. Juneteenth National Independence Day (June 19) & Observations
+    IF WS-BDAY-CUR-MONTH = 6 AND WS-BDAY-CUR-DAY = 19
+        MOVE 1 TO WS-IS-HOLIDAY
+    END-IF
+    *> June 19 on Saturday -> Observed Friday June 18
+    IF WS-BDAY-CUR-MONTH = 6 AND WS-BDAY-CUR-DAY = 18 AND WS-DOW-FRIDAY
+        MOVE 1 TO WS-IS-HOLIDAY
+    END-IF
+    *> June 19 on Sunday -> Observed Monday June 20
+    IF WS-BDAY-CUR-MONTH = 6 AND WS-BDAY-CUR-DAY = 20 AND WS-DOW-MONDAY
+        MOVE 1 TO WS-IS-HOLIDAY
+    END-IF
+
+    *> 6. Independence Day (July 4) & Observations
+    IF WS-BDAY-CUR-MONTH = 7 AND WS-BDAY-CUR-DAY = 4
+        MOVE 1 TO WS-IS-HOLIDAY
+    END-IF
+    *> July 4 on Saturday -> Observed Friday July 3
+    IF WS-BDAY-CUR-MONTH = 7 AND WS-BDAY-CUR-DAY = 3 AND WS-DOW-FRIDAY
+        MOVE 1 TO WS-IS-HOLIDAY
+    END-IF
+    *> July 4 on Sunday -> Observed Monday July 5
+    IF WS-BDAY-CUR-MONTH = 7 AND WS-BDAY-CUR-DAY = 5 AND WS-DOW-MONDAY
+        MOVE 1 TO WS-IS-HOLIDAY
+    END-IF
+
+    *> 7. Labor Day (1st Monday in September: 1-7)
+    IF WS-BDAY-CUR-MONTH = 9 AND WS-DOW-MONDAY
+        AND WS-BDAY-CUR-DAY >= 1 AND WS-BDAY-CUR-DAY <= 7
+        MOVE 1 TO WS-IS-HOLIDAY
+    END-IF
+
+    *> 8. Columbus Day (2nd Monday in October: 8-14)
+    IF WS-BDAY-CUR-MONTH = 10 AND WS-DOW-MONDAY
+        AND WS-BDAY-CUR-DAY >= 8 AND WS-BDAY-CUR-DAY <= 14
+        MOVE 1 TO WS-IS-HOLIDAY
+    END-IF
+
+    *> 9. Veterans Day (November 11) & Observations
+    IF WS-BDAY-CUR-MONTH = 11 AND WS-BDAY-CUR-DAY = 11
+        MOVE 1 TO WS-IS-HOLIDAY
+    END-IF
+    *> Nov 11 on Saturday -> Observed Friday Nov 10
+    IF WS-BDAY-CUR-MONTH = 11 AND WS-BDAY-CUR-DAY = 10 AND WS-DOW-FRIDAY
+        MOVE 1 TO WS-IS-HOLIDAY
+    END-IF
+    *> Nov 11 on Sunday -> Observed Monday Nov 12
+    IF WS-BDAY-CUR-MONTH = 11 AND WS-BDAY-CUR-DAY = 12 AND WS-DOW-MONDAY
+        MOVE 1 TO WS-IS-HOLIDAY
+    END-IF
+
+    *> 10. Thanksgiving Day (4th Thursday in November: 22-28)
+    IF WS-BDAY-CUR-MONTH = 11 AND WS-DOW-THURSDAY
+        AND WS-BDAY-CUR-DAY >= 22 AND WS-BDAY-CUR-DAY <= 28
+        MOVE 1 TO WS-IS-HOLIDAY
+    END-IF
+
+    *> 11. Christmas Day (December 25) & Observations
+    IF WS-BDAY-CUR-MONTH = 12 AND WS-BDAY-CUR-DAY = 25
+        MOVE 1 TO WS-IS-HOLIDAY
+    END-IF
+    *> Dec 25 on Saturday -> Observed Friday Dec 24
+    IF WS-BDAY-CUR-MONTH = 12 AND WS-BDAY-CUR-DAY = 24 AND WS-DOW-FRIDAY
+        MOVE 1 TO WS-IS-HOLIDAY
+    END-IF
+    *> Dec 25 on Sunday -> Observed Monday Dec 26
+    IF WS-BDAY-CUR-MONTH = 12 AND WS-BDAY-CUR-DAY = 26 AND WS-DOW-MONDAY
+        MOVE 1 TO WS-IS-HOLIDAY
+    END-IF.
 
 *> ================================================================
-*> WKDY - Check if date is a weekday
+*> WKDY - Check if date is a weekday (Monday - Friday)
 *> ================================================================
 DO-WKDY.
     DIVIDE LS-DATE1 BY 10000
@@ -215,6 +281,52 @@ DO-WKDY.
         MOVE "N" TO LS-RESULT-FLAG
     ELSE
         MOVE "Y" TO LS-RESULT-FLAG
+    END-IF
+    MOVE "E0000" TO LS-DATE-RESULT-CODE
+    MOVE SPACES TO LS-DATE-RESULT-MSG.
+
+*> ================================================================
+*> ISBD - Check if date is a business day (weekday & not a holiday)
+*> ================================================================
+DO-ISBD.
+    DIVIDE LS-DATE1 BY 10000
+        GIVING WS-BDAY-CUR-YEAR REMAINDER WS-JDN-TEMP
+    DIVIDE WS-JDN-TEMP BY 100
+        GIVING WS-BDAY-CUR-MONTH REMAINDER WS-BDAY-CUR-DAY
+    MOVE WS-BDAY-CUR-YEAR TO WS-YEAR
+    MOVE WS-BDAY-CUR-MONTH TO WS-MONTH
+    MOVE WS-BDAY-CUR-DAY TO WS-DAY
+    PERFORM CALC-DOW
+    IF WS-DOW-SATURDAY OR WS-DOW-SUNDAY
+        MOVE "N" TO LS-RESULT-FLAG
+    ELSE
+        PERFORM CHECK-HOLIDAY
+        IF WS-IS-HOLIDAY = 1
+            MOVE "N" TO LS-RESULT-FLAG
+        ELSE
+            MOVE "Y" TO LS-RESULT-FLAG
+        END-IF
+    END-IF
+    MOVE "E0000" TO LS-DATE-RESULT-CODE
+    MOVE SPACES TO LS-DATE-RESULT-MSG.
+
+*> ================================================================
+*> HOLI - Check if date is a federal bank holiday
+*> ================================================================
+DO-HOLI.
+    DIVIDE LS-DATE1 BY 10000
+        GIVING WS-BDAY-CUR-YEAR REMAINDER WS-JDN-TEMP
+    DIVIDE WS-JDN-TEMP BY 100
+        GIVING WS-BDAY-CUR-MONTH REMAINDER WS-BDAY-CUR-DAY
+    MOVE WS-BDAY-CUR-YEAR TO WS-YEAR
+    MOVE WS-BDAY-CUR-MONTH TO WS-MONTH
+    MOVE WS-BDAY-CUR-DAY TO WS-DAY
+    PERFORM CALC-DOW
+    PERFORM CHECK-HOLIDAY
+    IF WS-IS-HOLIDAY = 1
+        MOVE "Y" TO LS-RESULT-FLAG
+    ELSE
+        MOVE "N" TO LS-RESULT-FLAG
     END-IF
     MOVE "E0000" TO LS-DATE-RESULT-CODE
     MOVE SPACES TO LS-DATE-RESULT-MSG.
