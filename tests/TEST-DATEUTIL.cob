@@ -58,6 +58,16 @@ MAIN-PROGRAM.
     PERFORM TEST-DU-023
     PERFORM TEST-DU-024
     PERFORM TEST-DU-025
+    PERFORM TEST-DU-026
+    PERFORM TEST-DU-027
+    PERFORM TEST-DU-028
+    PERFORM TEST-DU-029
+    PERFORM TEST-DU-030
+    PERFORM TEST-DU-031
+    PERFORM TEST-DU-032
+    PERFORM TEST-DU-033
+    PERFORM TEST-DU-034
+    PERFORM TEST-DU-035
 
     DISPLAY "========================================"
     DISPLAY "RESULTS: " WS-PASS-COUNT "/" WS-TEST-COUNT
@@ -773,4 +783,244 @@ TEST-DU-025.
         DISPLAY "  FAIL: " WS-TEST-NAME
             " date=" WS-RESULT-DATE
             " expected=20280301"
+    END-IF.
+
+*> ---------------------------------------------------------------
+*> DU-026: Perpetual BDAY 2028 MLK Day (Jan 17 Mon) skipped
+*> Jan 14 2028 (Fri) + 1 bday -> Jan 18 2028 (Tue)
+*> ---------------------------------------------------------------
+TEST-DU-026.
+    ADD 1 TO WS-TEST-COUNT
+    MOVE "DU-026: 2028 MLK Day skipped in BDAY" TO WS-TEST-NAME
+    INITIALIZE WS-DATE-INPUT
+    INITIALIZE WS-DATE-OUTPUT
+    INITIALIZE WS-DATE-RESULT
+    MOVE "BDAY" TO WS-FUNCTION
+    MOVE 20280114 TO WS-DATE1
+    MOVE +1 TO WS-DAYS-TO-ADD
+    CALL "DATEUTIL" USING WS-FUNCTION WS-DATE-INPUT
+                          WS-DATE-OUTPUT WS-DATE-RESULT
+    IF WS-DATE-RESULT-CODE = "E0000"
+        AND WS-RESULT-DATE = 20280118
+        ADD 1 TO WS-PASS-COUNT
+        DISPLAY "  PASS: " WS-TEST-NAME
+    ELSE
+        ADD 1 TO WS-FAIL-COUNT
+        DISPLAY "  FAIL: " WS-TEST-NAME
+            " date=" WS-RESULT-DATE
+            " expected=20280118"
+    END-IF.
+
+*> ---------------------------------------------------------------
+*> DU-027: Perpetual BDAY 2028 Juneteenth (June 19 Mon) skipped
+*> June 16 2028 (Fri) + 1 bday -> June 20 2028 (Tue)
+*> ---------------------------------------------------------------
+TEST-DU-027.
+    ADD 1 TO WS-TEST-COUNT
+    MOVE "DU-027: 2028 Juneteenth skipped in BDAY" TO WS-TEST-NAME
+    INITIALIZE WS-DATE-INPUT
+    INITIALIZE WS-DATE-OUTPUT
+    INITIALIZE WS-DATE-RESULT
+    MOVE "BDAY" TO WS-FUNCTION
+    MOVE 20280616 TO WS-DATE1
+    MOVE +1 TO WS-DAYS-TO-ADD
+    CALL "DATEUTIL" USING WS-FUNCTION WS-DATE-INPUT
+                          WS-DATE-OUTPUT WS-DATE-RESULT
+    IF WS-DATE-RESULT-CODE = "E0000"
+        AND WS-RESULT-DATE = 20280620
+        ADD 1 TO WS-PASS-COUNT
+        DISPLAY "  PASS: " WS-TEST-NAME
+    ELSE
+        ADD 1 TO WS-FAIL-COUNT
+        DISPLAY "  FAIL: " WS-TEST-NAME
+            " date=" WS-RESULT-DATE
+            " expected=20280620"
+    END-IF.
+
+*> ---------------------------------------------------------------
+*> DU-028: Perpetual BDAY 2028 July 4 (Tue) skipped
+*> July 3 2028 (Mon) + 1 bday -> July 5 2028 (Wed)
+*> ---------------------------------------------------------------
+TEST-DU-028.
+    ADD 1 TO WS-TEST-COUNT
+    MOVE "DU-028: 2028 July 4 skipped in BDAY" TO WS-TEST-NAME
+    INITIALIZE WS-DATE-INPUT
+    INITIALIZE WS-DATE-OUTPUT
+    INITIALIZE WS-DATE-RESULT
+    MOVE "BDAY" TO WS-FUNCTION
+    MOVE 20280703 TO WS-DATE1
+    MOVE +1 TO WS-DAYS-TO-ADD
+    CALL "DATEUTIL" USING WS-FUNCTION WS-DATE-INPUT
+                          WS-DATE-OUTPUT WS-DATE-RESULT
+    IF WS-DATE-RESULT-CODE = "E0000"
+        AND WS-RESULT-DATE = 20280705
+        ADD 1 TO WS-PASS-COUNT
+        DISPLAY "  PASS: " WS-TEST-NAME
+    ELSE
+        ADD 1 TO WS-FAIL-COUNT
+        DISPLAY "  FAIL: " WS-TEST-NAME
+            " date=" WS-RESULT-DATE
+            " expected=20280705"
+    END-IF.
+
+*> ---------------------------------------------------------------
+*> DU-029: Perpetual BDAY 2028 Thanksgiving (Nov 23 Thu) skipped
+*> Nov 22 2028 (Wed) + 1 bday -> Nov 24 2028 (Fri)
+*> ---------------------------------------------------------------
+TEST-DU-029.
+    ADD 1 TO WS-TEST-COUNT
+    MOVE "DU-029: 2028 Thanksgiving skipped in BDAY" TO WS-TEST-NAME
+    INITIALIZE WS-DATE-INPUT
+    INITIALIZE WS-DATE-OUTPUT
+    INITIALIZE WS-DATE-RESULT
+    MOVE "BDAY" TO WS-FUNCTION
+    MOVE 20281122 TO WS-DATE1
+    MOVE +1 TO WS-DAYS-TO-ADD
+    CALL "DATEUTIL" USING WS-FUNCTION WS-DATE-INPUT
+                          WS-DATE-OUTPUT WS-DATE-RESULT
+    IF WS-DATE-RESULT-CODE = "E0000"
+        AND WS-RESULT-DATE = 20281124
+        ADD 1 TO WS-PASS-COUNT
+        DISPLAY "  PASS: " WS-TEST-NAME
+    ELSE
+        ADD 1 TO WS-FAIL-COUNT
+        DISPLAY "  FAIL: " WS-TEST-NAME
+            " date=" WS-RESULT-DATE
+            " expected=20281124"
+    END-IF.
+
+*> ---------------------------------------------------------------
+*> DU-030: Perpetual BDAY 2028 Christmas (Dec 25 Mon) skipped
+*> Dec 22 2028 (Fri) + 1 bday -> Dec 26 2028 (Tue)
+*> ---------------------------------------------------------------
+TEST-DU-030.
+    ADD 1 TO WS-TEST-COUNT
+    MOVE "DU-030: 2028 Christmas skipped in BDAY" TO WS-TEST-NAME
+    INITIALIZE WS-DATE-INPUT
+    INITIALIZE WS-DATE-OUTPUT
+    INITIALIZE WS-DATE-RESULT
+    MOVE "BDAY" TO WS-FUNCTION
+    MOVE 20281222 TO WS-DATE1
+    MOVE +1 TO WS-DAYS-TO-ADD
+    CALL "DATEUTIL" USING WS-FUNCTION WS-DATE-INPUT
+                          WS-DATE-OUTPUT WS-DATE-RESULT
+    IF WS-DATE-RESULT-CODE = "E0000"
+        AND WS-RESULT-DATE = 20281226
+        ADD 1 TO WS-PASS-COUNT
+        DISPLAY "  PASS: " WS-TEST-NAME
+    ELSE
+        ADD 1 TO WS-FAIL-COUNT
+        DISPLAY "  FAIL: " WS-TEST-NAME
+            " date=" WS-RESULT-DATE
+            " expected=20281226"
+    END-IF.
+
+*> ---------------------------------------------------------------
+*> DU-031: ISBD - Business day Monday returns Y
+*> ---------------------------------------------------------------
+TEST-DU-031.
+    ADD 1 TO WS-TEST-COUNT
+    MOVE "DU-031: ISBD returns Y on standard Monday" TO WS-TEST-NAME
+    INITIALIZE WS-DATE-INPUT
+    INITIALIZE WS-DATE-OUTPUT
+    INITIALIZE WS-DATE-RESULT
+    MOVE "ISBD" TO WS-FUNCTION
+    MOVE 20280103 TO WS-DATE1
+    CALL "DATEUTIL" USING WS-FUNCTION WS-DATE-INPUT
+                          WS-DATE-OUTPUT WS-DATE-RESULT
+    IF WS-DATE-RESULT-CODE = "E0000"
+        AND WS-RESULT-FLAG = "Y"
+        ADD 1 TO WS-PASS-COUNT
+        DISPLAY "  PASS: " WS-TEST-NAME
+    ELSE
+        ADD 1 TO WS-FAIL-COUNT
+        DISPLAY "  FAIL: " WS-TEST-NAME " flag=" WS-RESULT-FLAG
+    END-IF.
+
+*> ---------------------------------------------------------------
+*> DU-032: ISBD - Weekend Saturday returns N
+*> ---------------------------------------------------------------
+TEST-DU-032.
+    ADD 1 TO WS-TEST-COUNT
+    MOVE "DU-032: ISBD returns N on Saturday" TO WS-TEST-NAME
+    INITIALIZE WS-DATE-INPUT
+    INITIALIZE WS-DATE-OUTPUT
+    INITIALIZE WS-DATE-RESULT
+    MOVE "ISBD" TO WS-FUNCTION
+    MOVE 20280108 TO WS-DATE1
+    CALL "DATEUTIL" USING WS-FUNCTION WS-DATE-INPUT
+                          WS-DATE-OUTPUT WS-DATE-RESULT
+    IF WS-DATE-RESULT-CODE = "E0000"
+        AND WS-RESULT-FLAG = "N"
+        ADD 1 TO WS-PASS-COUNT
+        DISPLAY "  PASS: " WS-TEST-NAME
+    ELSE
+        ADD 1 TO WS-FAIL-COUNT
+        DISPLAY "  FAIL: " WS-TEST-NAME " flag=" WS-RESULT-FLAG
+    END-IF.
+
+*> ---------------------------------------------------------------
+*> DU-033: ISBD - New Year's Day 2029 (Mon Jan 1) returns N
+*> ---------------------------------------------------------------
+TEST-DU-033.
+    ADD 1 TO WS-TEST-COUNT
+    MOVE "DU-033: ISBD returns N on 2029 New Year's Day" TO WS-TEST-NAME
+    INITIALIZE WS-DATE-INPUT
+    INITIALIZE WS-DATE-OUTPUT
+    INITIALIZE WS-DATE-RESULT
+    MOVE "ISBD" TO WS-FUNCTION
+    MOVE 20290101 TO WS-DATE1
+    CALL "DATEUTIL" USING WS-FUNCTION WS-DATE-INPUT
+                          WS-DATE-OUTPUT WS-DATE-RESULT
+    IF WS-DATE-RESULT-CODE = "E0000"
+        AND WS-RESULT-FLAG = "N"
+        ADD 1 TO WS-PASS-COUNT
+        DISPLAY "  PASS: " WS-TEST-NAME
+    ELSE
+        ADD 1 TO WS-FAIL-COUNT
+        DISPLAY "  FAIL: " WS-TEST-NAME " flag=" WS-RESULT-FLAG
+    END-IF.
+
+*> ---------------------------------------------------------------
+*> DU-034: HOLI - Memorial Day 2029 (Mon May 28) returns Y
+*> ---------------------------------------------------------------
+TEST-DU-034.
+    ADD 1 TO WS-TEST-COUNT
+    MOVE "DU-034: HOLI returns Y on 2029 Memorial Day" TO WS-TEST-NAME
+    INITIALIZE WS-DATE-INPUT
+    INITIALIZE WS-DATE-OUTPUT
+    INITIALIZE WS-DATE-RESULT
+    MOVE "HOLI" TO WS-FUNCTION
+    MOVE 20290528 TO WS-DATE1
+    CALL "DATEUTIL" USING WS-FUNCTION WS-DATE-INPUT
+                          WS-DATE-OUTPUT WS-DATE-RESULT
+    IF WS-DATE-RESULT-CODE = "E0000"
+        AND WS-RESULT-FLAG = "Y"
+        ADD 1 TO WS-PASS-COUNT
+        DISPLAY "  PASS: " WS-TEST-NAME
+    ELSE
+        ADD 1 TO WS-FAIL-COUNT
+        DISPLAY "  FAIL: " WS-TEST-NAME " flag=" WS-RESULT-FLAG
+    END-IF.
+
+*> ---------------------------------------------------------------
+*> DU-035: HOLI - Regular business day (2029 May 29) returns N
+*> ---------------------------------------------------------------
+TEST-DU-035.
+    ADD 1 TO WS-TEST-COUNT
+    MOVE "DU-035: HOLI returns N on regular business day" TO WS-TEST-NAME
+    INITIALIZE WS-DATE-INPUT
+    INITIALIZE WS-DATE-OUTPUT
+    INITIALIZE WS-DATE-RESULT
+    MOVE "HOLI" TO WS-FUNCTION
+    MOVE 20290529 TO WS-DATE1
+    CALL "DATEUTIL" USING WS-FUNCTION WS-DATE-INPUT
+                          WS-DATE-OUTPUT WS-DATE-RESULT
+    IF WS-DATE-RESULT-CODE = "E0000"
+        AND WS-RESULT-FLAG = "N"
+        ADD 1 TO WS-PASS-COUNT
+        DISPLAY "  PASS: " WS-TEST-NAME
+    ELSE
+        ADD 1 TO WS-FAIL-COUNT
+        DISPLAY "  FAIL: " WS-TEST-NAME " flag=" WS-RESULT-FLAG
     END-IF.
